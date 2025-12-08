@@ -6,7 +6,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 # Experiment 1: Bad Conditioning Test
-def experiment1(d=20, k=3, sigma=0.1, num_reps=50):
+def experiment1(data_gen_func, d=20, k=3, sigma=0.1, num_reps=50):
     rhos = np.linspace(0, 0.99, 10)
     jenn_rec = []
     als_rec = []
@@ -17,7 +17,7 @@ def experiment1(d=20, k=3, sigma=0.1, num_reps=50):
     for rho in tqdm(rhos):
         rec_j, fac_j, rec_a, fac_a, rec_t, fac_t = [], [], [], [], [], []
         for _ in tqdm(range(num_reps)):
-            T, T_noisy, A_true, B_true, C_true = generate_data_gmm(d, k, sigma, rho)
+            T, T_noisy, A_true, B_true, C_true = data_gen_func(d, k, sigma, rho)
             # Jennrich
             A_hat, B_hat, C_hat = jennrich(T_noisy, k)
             if A_hat is not None:
@@ -62,7 +62,7 @@ def experiment1(d=20, k=3, sigma=0.1, num_reps=50):
     plt.show()
 
 # Experiment 2: Noise Floor
-def experiment2(d=20, k=3, rho=0, num_reps=50):
+def experiment2(data_gen_func, d=20, k=3, rho=0, num_reps=50):
     sigmas = np.logspace(-3, 0, 10)
     jenn_rec = []
     als_rec = []
@@ -74,7 +74,7 @@ def experiment2(d=20, k=3, rho=0, num_reps=50):
         rec_j, fac_j, rec_a, fac_a = [], [], [], []
         rec_t, fac_t = [], []
         for _ in range(num_reps):
-            T, T_noisy, A_true, B_true, C_true = generate_data_gmm(d, k, sigma, rho)
+            T, T_noisy, A_true, B_true, C_true = data_gen_func(d, k, sigma, rho)
             A_hat, B_hat, C_hat = jennrich(T_noisy, k)
             if A_hat is not None:
                 hat_T = reconstruct_tensor(A_hat, B_hat, C_hat)
@@ -118,11 +118,11 @@ def experiment2(d=20, k=3, rho=0, num_reps=50):
     plt.show()
 
 # Experiment 3: Initialization Sensitivity
-def experiment3(d=20, k=3, sigma=0.1, rho=0.5, num_inits=20, num_reps=20):
+def experiment3(data_gen_func, d=20, k=3, sigma=0.1, rho=0.5, num_inits=20, num_reps=20):
     var_j_rec, var_a_rec, var_j_fac, var_a_fac = [], [], [], []
     var_t_rec, var_t_fac = [], []
     for _ in range(num_reps):
-        T, T_noisy, A_true, B_true, C_true = generate_data_gmm(d, k, sigma, rho)
+        T, T_noisy, A_true, B_true, C_true = data_gen_func(d, k, sigma, rho)
         # Jennrich
         rec_js, fac_js = [], []
         for _ in range(num_inits):
