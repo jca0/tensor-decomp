@@ -115,7 +115,6 @@ def experiment2(d=20, k=3, rho=0, num_reps=50):
     ax2.set_title('Factor Similarity vs sigma')
 
     plt.tight_layout()
-    plt.savefig('exp2.png')
     plt.show()
 
 # Experiment 3: Initialization Sensitivity
