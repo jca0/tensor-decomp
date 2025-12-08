@@ -109,3 +109,67 @@ def ortho_als(T, k, max_iter=50, tol=1e-4):
         C = normalize(C)
 
     return A, B, C
+
+def tucker_als(T, k, max_iter=50, tol=1e-4):
+    """
+    Tucker ALS decomposition for 3D tensors.
+    Decomposes T ≈ S ×₁ U ×₂ V ×₃ W where S is (k,k,k) core tensor.
+
+    Args:
+        T: d x d x d tensor
+        k: rank for each mode (core will be k x k x k)
+        max_iter: number of ALS iterations
+        tol: stopping tolerance (optional)
+
+    Returns:
+        U, V, W: factor matrices (d x k each)
+        S: core tensor (k x k x k)
+    """
+    d = T.shape[0]
+
+    # Initialize factor matrices
+    U = np.random.randn(d, k)
+    V = np.random.randn(d, k)
+    W = np.random.randn(d, k)
+
+    # Normalize columns
+    def normalize(X):
+        return X / np.maximum(np.linalg.norm(X, axis=0, keepdims=True), 1e-10)
+
+    U = normalize(U)
+    V = normalize(V)
+    W = normalize(W)
+
+    # Initialize core tensor
+    S = np.random.randn(k, k, k)
+
+    for it in range(max_iter):
+        # Update core tensor S first
+        T1 = T.reshape(d, d*d)
+        kr_vw = khatri_rao(V, W)  # (d*d) x k
+        S_mode1_new = U.T @ T1 @ kr_vw
+        S = S_mode1_new.reshape(k, k, k)
+
+        # Update U (mode 1)
+        S_mode1 = S.reshape(k, k*k)  # unfold S along mode 1
+        Y = T1 @ kr_vw @ S_mode1.T
+        U = Y @ np.linalg.pinv(S_mode1 @ S_mode1.T)
+        U = normalize(U)
+
+        # Update V (mode 2)
+        T2 = np.transpose(T, (1, 0, 2)).reshape(d, d*d)
+        kr_uw = khatri_rao(U, W)
+        S_mode2 = np.transpose(S, (1, 0, 2)).reshape(k, k*k)
+        Y = T2 @ kr_uw @ S_mode2.T
+        V = Y @ np.linalg.pinv(S_mode2 @ S_mode2.T)
+        V = normalize(V)
+
+        # Update W (mode 3)
+        T3 = np.transpose(T, (2, 0, 1)).reshape(d, d*d)
+        kr_vu = khatri_rao(U, V)
+        S_mode3 = np.transpose(S, (2, 0, 1)).reshape(k, k*k)
+        Y = T3 @ kr_vu @ S_mode3.T
+        W = Y @ np.linalg.pinv(S_mode3 @ S_mode3.T)
+        W = normalize(W)
+
+    return U, V, W, S

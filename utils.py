@@ -19,6 +19,20 @@ def reconstruct_tensor(A, B, C):
         T += np.outer(A[:, i], B[:, i])[:, :, np.newaxis] * C[:, i]
     return T
 
+def reconstruct_tensor_tucker(U, V, W, S):
+    """
+    Reconstruct tensor from Tucker decomposition: T ≈ S ×₁ U ×₂ V ×₃ W
+    """
+    d, r1 = U.shape
+    _, r2 = V.shape
+    _, r3 = W.shape
+    T = np.zeros((d, d, d))
+
+    # For efficiency, we can use einstein summation
+    # T[i,j,k] = sum_{p,q,r} S[p,q,r] * U[i,p] * V[j,q] * W[k,r]
+    T = np.einsum('pqr,ip,jq,kr->ijk', S, U, V, W)
+    return T
+
 def fro_norm(X):
     """
     Frobenius norm
